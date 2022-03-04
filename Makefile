@@ -63,13 +63,13 @@ build:
 	go build -v .
 
 compile:
-	GOOS=linux GOARCH=amd64 go build -o bin/linux/amd64/gozipper-$(CURRENT_TAG)-linux-amd64 main.go
-	GOOS=linux GOARCH=arm64 go build -o bin/linux/arm64/gozipper-$(CURRENT_TAG)-linux-arm64 main.go
-	GOOS=darwin GOARCH=amd64 go build -o bin/darwin/amd64/gozipper-$(CURRENT_TAG)-x86_64-apple-darwin_amd64 main.go
-	GOOS=darwin GOARCH=arm64 go build -o bin/darwin/arm64/gozipper-$(CURRENT_TAG)-x86_64-apple-darwin_arm64 main.go
+	GOOS=linux GOARCH=amd64 go build -o bin/linux/amd64/gozipartifact-$(CURRENT_TAG)-linux-amd64 main.go
+	GOOS=linux GOARCH=arm64 go build -o bin/linux/arm64/gozipartifact-$(CURRENT_TAG)-linux-arm64 main.go
+	GOOS=darwin GOARCH=amd64 go build -o bin/darwin/amd64/gozipartifact-$(CURRENT_TAG)-x86_64-apple-darwin_amd64 main.go
+	GOOS=darwin GOARCH=arm64 go build -o bin/darwin/arm64/gozipartifact-$(CURRENT_TAG)-x86_64-apple-darwin_arm64 main.go
 
 compress:
-	gzip -9 bin/linux/amd64/gozipper-$(CURRENT_TAG)-linux-amd64
-	gzip -9 bin/linux/arm64/gozipper-$(CURRENT_TAG)-linux-arm64
-	gzip -9 bin/darwin/amd64/gozipper-$(CURRENT_TAG)-x86_64-apple-darwin_amd64
-	gzip -9 bin/darwin/arm64/gozipper-$(CURRENT_TAG)-x86_64-apple-darwin_arm64
+	gzip -9 bin/linux/amd64/gozipartifact-$(CURRENT_TAG)-linux-amd64
+	gzip -9 bin/linux/arm64/gozipartifact-$(CURRENT_TAG)-linux-arm64
+	gzip -9 bin/darwin/amd64/gozipartifact-$(CURRENT_TAG)-x86_64-apple-darwin_amd64
+	gzip -9 bin/darwin/arm64/gozipartifact-$(CURRENT_TAG)-x86_64-apple-darwin_arm64
