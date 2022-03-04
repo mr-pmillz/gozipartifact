@@ -1,0 +1,220 @@
+name: CI
+
+on:
+  push:
+    tags:
+      - '*'
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        go-version: [1.17.x]
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      # Setup Go
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - id: go-cache-paths
+        run: |
+          echo "::set-output name=gobuild::$(go env GOCACHE)"
+          echo "::set-output name=gomod::$(go env GOMODCACHE)"
+
+      # Cache go build cache
+      - name: Go Build Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.gobuild }}
+          key: ${{ runner.os }}-gobuild-${{ hashFiles('**/go.sum') }}
+
+      # Cache go mod cache
+      - name: Go Mod Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.gomod }}
+          key: ${{ runner.os }}-gomod-${{ hashFiles('**/go.sum') }}
+
+      - name: Install dependencies
+        run: go get github.com/mattn/go-isatty@v0.0.12
+
+      # Run build of the application
+      - name: Run build
+        run: |
+          make -f Makefile build
+
+  test:
+    strategy:
+      matrix:
+        go-version: [1.17.x]
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      # Setup Go
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - id: go-cache-paths
+        run: |
+          echo "::set-output name=gobuild::$(go env GOCACHE)"
+          echo "::set-output name=gomod::$(go env GOMODCACHE)"
+
+      # Cache go build cache
+      - name: Go Build Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.gobuild }}
+          key: ${{ runner.os }}-gobuild-${{ hashFiles('**/go.sum') }}
+
+      # Cache go mod cache
+      - name: Go Mod Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.gomod }}
+          key: ${{ runner.os }}-gomod-${{ hashFiles('**/go.sum') }}
+
+      # Run Tests
+      - name: Tests
+        run: |
+          make -f Makefile build
+          make -f Makefile test || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Upload the original go test log as an artifact for later review.
+      - name: Upload test log
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: test-log
+          path: coverage/gotest.log
+          if-no-files-found: error
+
+  run-gozipper:
+    strategy:
+      matrix:
+        go-version: [1.17.x]
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - id: go-cache-paths
+        run: |
+          echo "::set-output name=gobuild::$(go env GOCACHE)"
+          echo "::set-output name=gomod::$(go env GOMODCACHE)"
+
+      # Cache go build cache
+      - name: Go Build Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.gobuild }}
+          key: ${{ runner.os }}-gobuild-${{ hashFiles('**/go.sum') }}
+
+      # Cache go mod cache
+      - name: Go Mod Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.gomod }}
+          key: ${{ runner.os }}-gomod-${{ hashFiles('**/go.sum') }}
+
+      - name: Go Build
+        run: |
+          go get github.com/mattn/go-isatty@v0.0.12
+          make -f Makefile build
+
+      - name: Run gozipper
+        run: |
+          echo "::group::GoZipper"
+          ./gozipper -z tests/he_module-email-log-fix_wrong_format.zip
+          echo "::endgroup::"
+
+  # ================
+  # RELEASE JOB
+  #   runs after a successful build
+  #   only runs on push "v*" tag
+  # ================
+  release:
+    needs: [build, test, run-gozipper]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1000
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17.x
+
+      - id: go-cache-paths
+        run: |
+          echo "::set-output name=gobuild::$(go env GOCACHE)"
+          echo "::set-output name=gomod::$(go env GOMODCACHE)"
+
+      # Cache go build cache
+      - name: Go Build Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.gobuild }}
+          key: ${{ runner.os }}-gobuild-${{ hashFiles('**/go.sum') }}
+
+      # Cache go mod cache
+      - name: Go Mod Cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.gomod }}
+          key: ${{ runner.os }}-gomod-${{ hashFiles('**/go.sum') }}
+
+      - name: Generate Binaries
+        id: binaries
+        run: |
+          make -f Makefile release
+
+      - name: Get current tag name
+        run: |
+          echo "TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+          echo "PREVIOUS_TAG=$(git describe --abbrev=0 --tags $(git rev-list --tags --skip=1 --max-count=1))" >> $GITHUB_ENV
+
+      - name: "Build Changelog"
+        id: github_release
+        uses: mikepenz/release-changelog-builder-action@v1
+        with:
+          configuration: ".github/configuration_repo.json"
+          owner: "mr-pmillz"
+          repo: "gozipper"
+          fromTag: ${{ env.PREVIOUS_TAG }}
+          toTag: ${{ env.TAG }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        if: success()
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{steps.github_release.outputs.changelog}}
+          prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-b') || contains(github.ref, '-a') }}
+          files: |
+            bin/linux/amd64/gozipper-${{ env.TAG }}-linux-amd64.gz
+            bin/linux/arm64/gozipper-${{ env.TAG }}-linux-arm64.gz
+            bin/darwin/amd64/gozipper-${{ env.TAG }}-x86_64-apple-darwin_amd64.gz
+            bin/darwin/arm64/gozipper-${{ env.TAG }}-x86_64-apple-darwin_arm64.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
