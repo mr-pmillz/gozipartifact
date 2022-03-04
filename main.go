@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	figure "github.com/common-nighthawk/go-figure"
+	"github.com/common-nighthawk/go-figure"
 	"github.com/mkideal/cli"
 	"github.com/olekukonko/tablewriter"
 )
