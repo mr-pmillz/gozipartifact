@@ -22,8 +22,7 @@ Table of Contents
 
 ## About
 
-This is a simple go program for teaching golang to others
-Creates a magento 2 artifact zip file with proper structure from a zip downloaded from various vendors with incorrect structure
+This is a simple go program for teaching golang to others. gozipartifact creates a magento 2 artifact zip file with proper structure from a zip downloaded from various vendors with incorrect structure
 
 ## Usage
 
