@@ -228,10 +228,6 @@ func zipWriter(ComposerParentDir, outputZipFileName string) error {
 		return err
 	}
 
-	if err != nil {
-		return err
-	}
-
 	// Make sure to check the error on Close.
 	err = w.Close()
 	if err != nil {
@@ -277,6 +273,44 @@ func addFiles(w *zip.Writer, basePath, baseInZip string) error {
 	return nil
 }
 
+func (info *ModuleInfo) printModuleInfo() error {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Vendor", "Module", "Version", "FilePath"})
+	table.SetBorder(false)
+	table.SetHeaderColor(
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiMagentaColor, tablewriter.BgBlackColor},
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiMagentaColor, tablewriter.BgBlackColor},
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiMagentaColor, tablewriter.BgBlackColor},
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiMagentaColor, tablewriter.BgBlackColor},
+	)
+
+	table.SetColumnColor(
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiWhiteColor, tablewriter.BgBlackColor},
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiWhiteColor, tablewriter.BgBlackColor},
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiWhiteColor, tablewriter.BgBlackColor},
+		tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiWhiteColor, tablewriter.BgBlackColor},
+	)
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	outputFilePath := fmt.Sprintf("%s/%s", pwd, info.OutputZipFileName)
+	colorData := []string{info.VendorName, info.ModuleName, info.ModuleVersion, outputFilePath}
+	table.Rich(colorData, []tablewriter.Colors{
+		{tablewriter.Normal, tablewriter.FgHiGreenColor},
+		{tablewriter.Normal, tablewriter.FgHiYellowColor},
+		{tablewriter.Normal, tablewriter.FgHiCyanColor},
+		{tablewriter.Normal, tablewriter.FgHiRedColor},
+	})
+
+	table.SetAutoMergeCells(true)
+	table.Render()
+
+	return nil
+}
+
 func main() {
 	os.Exit(cli.Run(new(argT), func(ctx *cli.Context) error {
 		argv := ctx.Argv().(*argT)
@@ -297,45 +331,18 @@ func main() {
 				return err
 			}
 
-			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"Vendor", "Module", "Version", "FilePath"})
-			table.SetBorder(false)
-			table.SetHeaderColor(
-				tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiMagentaColor, tablewriter.BgBlackColor},
-				tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiMagentaColor, tablewriter.BgBlackColor},
-				tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiMagentaColor, tablewriter.BgBlackColor},
-				tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiMagentaColor, tablewriter.BgBlackColor},
-			)
-
-			table.SetColumnColor(
-				tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiWhiteColor, tablewriter.BgBlackColor},
-				tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiWhiteColor, tablewriter.BgBlackColor},
-				tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiWhiteColor, tablewriter.BgBlackColor},
-				tablewriter.Colors{tablewriter.Bold, tablewriter.FgHiWhiteColor, tablewriter.BgBlackColor},
-			)
-
-			absOutputFilePath, err := filepath.Abs(info.OutputZipFileName)
-			if err != nil {
-				return err
-			}
-			colorData := []string{info.VendorName, info.ModuleName, info.ModuleVersion, absOutputFilePath}
-			table.Rich(colorData, []tablewriter.Colors{
-				{tablewriter.Normal, tablewriter.FgHiGreenColor},
-				{tablewriter.Normal, tablewriter.FgHiYellowColor},
-				{tablewriter.Normal, tablewriter.FgHiCyanColor},
-				{tablewriter.Normal, tablewriter.FgHiRedColor},
-			})
-
 			if validModuleComponents(info) {
 				if err = createArtifact(info); err != nil {
 					return err
 				}
-				table.SetAutoMergeCells(true)
-				table.Render()
+				if err = info.printModuleInfo(); err != nil {
+					return err
+				}
 			} else {
 				fmt.Printf("[!] %s isn't a valid magento 2 module\n", argv.ZipFilePath)
 			}
 
+			// Cleanup Remove TempDir used for unzipping zipfile input arg
 			if err = os.RemoveAll(info.TempUnzipPath); err != nil {
 				return err
 			}

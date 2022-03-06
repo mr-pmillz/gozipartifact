@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -103,6 +104,150 @@ func Test_parseZip(t *testing.T) {
 					t.Errorf("couldnt remove dir: %v", err)
 				}
 			})
+		})
+	}
+}
+
+func Test_filePathWalkDir(t *testing.T) {
+	type args struct {
+		root string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{name: "test walkdir", args: args{root: "tests"}, want: []string{
+			"tests/he_module-email-log-fix.zip",
+			"tests/he_module-email-log-fix_wrong_format.zip",
+		}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := filePathWalkDir(tt.args.root)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("filePathWalkDir() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("filePathWalkDir() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_validModuleComponents(t *testing.T) {
+	type args struct {
+		info *ModuleInfo
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "validModuleComponenets", args: args{info: &ModuleInfo{
+			ModuleName:        "looney-tunes",
+			VendorName:        "acme",
+			ModuleVersion:     "1.0.0",
+			ComposerJSONPath:  "composer.json",
+			TempUnzipPath:     "",
+			RegistrationPHP:   "registration.php",
+			ModuleXML:         "etc/module.xml",
+			OutputZipFileName: "",
+			ComposerParentDir: "",
+		}}, want: true},
+		{name: "validModuleComponenets", args: args{info: &ModuleInfo{
+			ModuleName:        "",
+			VendorName:        "",
+			ModuleVersion:     "",
+			ComposerJSONPath:  "",
+			TempUnzipPath:     "",
+			RegistrationPHP:   "",
+			ModuleXML:         "",
+			OutputZipFileName: "",
+			ComposerParentDir: "",
+		}}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := validModuleComponents(tt.args.info); got != tt.want {
+				t.Errorf("validModuleComponents() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_zipWriter(t *testing.T) {
+	type args struct {
+		ComposerParentDir string
+		outputZipFileName string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := zipWriter(tt.args.ComposerParentDir, tt.args.outputZipFileName); (err != nil) != tt.wantErr {
+				t.Errorf("zipWriter() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestModuleInfo_printModuleInfo(t *testing.T) {
+	type fields struct {
+		ModuleName        string
+		VendorName        string
+		ModuleVersion     string
+		ComposerJSONPath  string
+		TempUnzipPath     string
+		RegistrationPHP   string
+		ModuleXML         string
+		OutputZipFileName string
+		ComposerParentDir string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "test print",
+			fields: fields{
+				ModuleName:        "lonney-tunes",
+				VendorName:        "acme",
+				ModuleVersion:     "1.2.3",
+				ComposerJSONPath:  "",
+				TempUnzipPath:     "",
+				RegistrationPHP:   "",
+				ModuleXML:         "",
+				OutputZipFileName: "test.zip",
+				ComposerParentDir: "",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			info := &ModuleInfo{
+				ModuleName:        tt.fields.ModuleName,
+				VendorName:        tt.fields.VendorName,
+				ModuleVersion:     tt.fields.ModuleVersion,
+				ComposerJSONPath:  tt.fields.ComposerJSONPath,
+				TempUnzipPath:     tt.fields.TempUnzipPath,
+				RegistrationPHP:   tt.fields.RegistrationPHP,
+				ModuleXML:         tt.fields.ModuleXML,
+				OutputZipFileName: tt.fields.OutputZipFileName,
+				ComposerParentDir: tt.fields.ComposerParentDir,
+			}
+			if err := info.printModuleInfo(); (err != nil) != tt.wantErr {
+				t.Errorf("ModuleInfo.printModuleInfo() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }
