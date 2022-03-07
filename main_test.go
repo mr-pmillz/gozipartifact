@@ -188,13 +188,21 @@ func Test_zipWriter(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{name: "test zipWriter", args: args{
+			ComposerParentDir: "tests/",
+			outputZipFileName: "tests.zip",
+		}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := zipWriter(tt.args.ComposerParentDir, tt.args.outputZipFileName); (err != nil) != tt.wantErr {
 				t.Errorf("zipWriter() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			t.Cleanup(func() {
+				if err := os.Remove("tests.zip"); err != nil {
+					t.Errorf("couldnt remove dir: %v", err)
+				}
+			})
 		})
 	}
 }
