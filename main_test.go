@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -255,6 +256,91 @@ func TestModuleInfo_printModuleInfo(t *testing.T) {
 			}
 			if err := info.printModuleInfo(); (err != nil) != tt.wantErr {
 				t.Errorf("ModuleInfo.printModuleInfo() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_unzipFile(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "temp_extension")
+	if err != nil {
+		t.Errorf("%s", err)
+	}
+
+	reader, err := zip.OpenReader("tests/he_module-email-log-fix_wrong_format.zip")
+	if err != nil {
+		t.Errorf("%s", err)
+	}
+	zipFile := &zip.File{}
+	for _, i := range reader.File {
+		zipFile = i
+	}
+	defer reader.Close()
+	type args struct {
+		f           *zip.File
+		destination string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{name: "test unzipFile", args: args{
+			f:           zipFile,
+			destination: tmpDir,
+		}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err = unzipFile(tt.args.f, tt.args.destination); (err != nil) != tt.wantErr {
+				t.Errorf("unzipFile() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+		t.Cleanup(func() {
+			if err = os.RemoveAll(tmpDir); err != nil {
+				t.Errorf("couldnt remove dir: %v", err)
+			}
+		})
+	}
+}
+
+func Test_createArtifact(t *testing.T) {
+	type args struct {
+		info *ModuleInfo
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := createArtifact(tt.args.info); (err != nil) != tt.wantErr {
+				t.Errorf("createArtifact() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_addFiles(t *testing.T) {
+	type args struct {
+		w         *zip.Writer
+		basePath  string
+		baseInZip string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := addFiles(tt.args.w, tt.args.basePath, tt.args.baseInZip); (err != nil) != tt.wantErr {
+				t.Errorf("addFiles() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
