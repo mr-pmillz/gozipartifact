@@ -305,6 +305,10 @@ func Test_unzipFile(t *testing.T) {
 }
 
 func Test_createArtifact(t *testing.T) {
+	info, err := parseZip("tests/he_module-email-log-fix_wrong_format.zip")
+	if err != nil {
+		t.Errorf("%s", err)
+	}
 	type args struct {
 		info *ModuleInfo
 	}
@@ -313,7 +317,7 @@ func Test_createArtifact(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{name: "Test createArtifact 1", args: args{info: info}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -321,10 +325,31 @@ func Test_createArtifact(t *testing.T) {
 				t.Errorf("createArtifact() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+		t.Cleanup(func() {
+			if err = os.RemoveAll(info.TempUnzipPath); err != nil {
+				t.Errorf("couldnt remove dir: %v", err)
+			}
+			if err = os.Remove(info.OutputZipFileName); err != nil {
+				t.Errorf("couldnt remove dir: %v", err)
+			}
+		})
 	}
 }
 
 func Test_addFiles(t *testing.T) {
+	info, err := parseZip("tests/he_module-email-log-fix_wrong_format.zip")
+	if err != nil {
+		t.Errorf("%s", err)
+	}
+
+	outFile, err := os.Create(info.OutputZipFileName)
+	if err != nil {
+		t.Errorf("%s", err)
+	}
+	defer outFile.Close()
+
+	// Create a new zip archive.
+	w := zip.NewWriter(outFile)
 	type args struct {
 		w         *zip.Writer
 		basePath  string
@@ -335,12 +360,24 @@ func Test_addFiles(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{name: "test addFiles 1", args: args{
+			w:         w,
+			basePath:  info.ComposerParentDir,
+			baseInZip: "",
+		}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := addFiles(tt.args.w, tt.args.basePath, tt.args.baseInZip); (err != nil) != tt.wantErr {
 				t.Errorf("addFiles() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+		t.Cleanup(func() {
+			if err = os.RemoveAll(info.TempUnzipPath); err != nil {
+				t.Errorf("couldnt remove dir: %v", err)
+			}
+			if err = os.Remove(info.OutputZipFileName); err != nil {
+				t.Errorf("couldnt remove dir: %v", err)
 			}
 		})
 	}
