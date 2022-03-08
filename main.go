@@ -4,12 +4,13 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"fmt"
-	"github.com/common-nighthawk/go-figure"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/common-nighthawk/go-figure"
 
 	"github.com/mkideal/cli"
 	"github.com/olekukonko/tablewriter"
