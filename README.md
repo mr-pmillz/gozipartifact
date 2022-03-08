@@ -22,9 +22,18 @@ Table of Contents
 
 ## About
 
-This is a simple go program for teaching golang to others. gozipartifact creates a magento 2 artifact zip file with proper structure from a zip downloaded from various vendors with incorrect structure
+written as an exercise in go for working with zip files.
+gozipartifact creates a magento 2 artifact zip file with proper structure from a zip downloaded from various vendors with incorrect structure
 
 ## Usage
+
+```shell
+./gozipartifact --help
+Options:
+
+  -h, --help      display help information
+  -z, --zipfile   zipfile to create artifact from
+```
 
 ```shell
 ./gozipartifact -z path/to/magento-extension-zipfile.zip

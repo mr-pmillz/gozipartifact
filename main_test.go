@@ -88,7 +88,8 @@ func Test_parseZip(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "ParseZip", args: args{zipFilePath: "tests/he_module-email-log-fix.zip"}, want: &ModuleInfo{}, wantErr: false},
-		{name: "ParseZip", args: args{zipFilePath: "tests/he_module-email-log-fix_wrong_format.zip"}, want: &ModuleInfo{}, wantErr: false},
+		{name: "ParseZip 2", args: args{zipFilePath: "tests/he_module-email-log-fix_wrong_format.zip"}, want: &ModuleInfo{}, wantErr: false},
+		{name: "ParseZip 3", args: args{zipFilePath: "tests/invalid_module.zip"}, want: &ModuleInfo{}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -194,6 +195,10 @@ func Test_zipWriter(t *testing.T) {
 			ComposerParentDir: "tests/",
 			outputZipFileName: "tests.zip",
 		}, wantErr: false},
+		{name: "test zipWriter", args: args{
+			ComposerParentDir: "asdfasdfsadfasdf",
+			outputZipFileName: "tests.zip",
+		}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -394,6 +399,7 @@ func Test_goZipArtifact(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "Test goZipArtifact 1", args: args{zipFilePath: "tests/he_module-email-log-fix_wrong_format.zip"}, wantErr: false},
+		{name: "Test goZipArtifact 2", args: args{zipFilePath: "tests/invalid_module.zip"}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -402,8 +408,11 @@ func Test_goZipArtifact(t *testing.T) {
 			}
 		})
 		t.Cleanup(func() {
-			if err := os.Remove("human-element-module-email-logo-fix-2.0.1.zip"); err != nil {
-				t.Errorf("couldnt remove dir: %v", err)
+			_, err := os.Stat("human-element-module-email-logo-fix-2.0.1.zip")
+			if err == nil {
+				if err = os.Remove("human-element-module-email-logo-fix-2.0.1.zip"); err != nil {
+					t.Errorf("couldnt remove dir: %v", err)
+				}
 			}
 		})
 	}
