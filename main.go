@@ -4,13 +4,13 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"fmt"
+	"github.com/common-nighthawk/go-figure"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/common-nighthawk/go-figure"
 	"github.com/mkideal/cli"
 	"github.com/olekukonko/tablewriter"
 )
@@ -311,39 +311,47 @@ func (info *ModuleInfo) printModuleInfo() error {
 	return nil
 }
 
+// goZipArtifact runs the main logic of the program
+func goZipArtifact(zipFilePath string) error {
+	absZipPath, err := filepath.Abs(zipFilePath)
+	if err != nil {
+		return err
+	}
+	fmt.Println()
+	figure.NewColorFigure("M2 Artifact", "colossal", "green", true).Print()
+	fmt.Println()
+	fmt.Printf("[+] Creating Artifact from %s\n", absZipPath)
+	fmt.Println()
+
+	info, err := parseZip(absZipPath)
+	if err != nil {
+		return err
+	}
+
+	if validModuleComponents(info) {
+		if err = createArtifact(info); err != nil {
+			return err
+		}
+		if err = info.printModuleInfo(); err != nil {
+			return err
+		}
+	} else {
+		fmt.Printf("[!] %s isn't a valid magento 2 module\n", zipFilePath)
+	}
+
+	// Cleanup Remove TempDir used for unzipping zipfile input arg
+	if err = os.RemoveAll(info.TempUnzipPath); err != nil {
+		return err
+	}
+	return nil
+}
+
 func main() {
 	os.Exit(cli.Run(new(argT), func(ctx *cli.Context) error {
 		argv := ctx.Argv().(*argT)
 
 		if len(argv.ZipFilePath) >= 1 {
-			absZipPath, err := filepath.Abs(argv.ZipFilePath)
-			if err != nil {
-				return err
-			}
-			fmt.Println()
-			figure.NewColorFigure("M2 Artifact", "colossal", "green", true).Print()
-			fmt.Println()
-			fmt.Printf("[+] Creating Artifact from %s\n", absZipPath)
-			fmt.Println()
-
-			info, err := parseZip(absZipPath)
-			if err != nil {
-				return err
-			}
-
-			if validModuleComponents(info) {
-				if err = createArtifact(info); err != nil {
-					return err
-				}
-				if err = info.printModuleInfo(); err != nil {
-					return err
-				}
-			} else {
-				fmt.Printf("[!] %s isn't a valid magento 2 module\n", argv.ZipFilePath)
-			}
-
-			// Cleanup Remove TempDir used for unzipping zipfile input arg
-			if err = os.RemoveAll(info.TempUnzipPath); err != nil {
+			if err := goZipArtifact(argv.ZipFilePath); err != nil {
 				return err
 			}
 		}

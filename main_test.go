@@ -133,6 +133,7 @@ func Test_filePathWalkDir(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("filePathWalkDir() = %v, want %v", got, tt.want)
+				return
 			}
 		})
 	}
@@ -377,6 +378,31 @@ func Test_addFiles(t *testing.T) {
 				t.Errorf("couldnt remove dir: %v", err)
 			}
 			if err = os.Remove(info.OutputZipFileName); err != nil {
+				t.Errorf("couldnt remove dir: %v", err)
+			}
+		})
+	}
+}
+
+func Test_goZipArtifact(t *testing.T) {
+	type args struct {
+		zipFilePath string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{name: "Test goZipArtifact 1", args: args{zipFilePath: "tests/he_module-email-log-fix_wrong_format.zip"}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := goZipArtifact(tt.args.zipFilePath); (err != nil) != tt.wantErr {
+				t.Errorf("goZipArtifact() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+		t.Cleanup(func() {
+			if err := os.Remove("human-element-module-email-logo-fix-2.0.1.zip"); err != nil {
 				t.Errorf("couldnt remove dir: %v", err)
 			}
 		})
