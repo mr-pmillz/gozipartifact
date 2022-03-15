@@ -1,4 +1,4 @@
-module gozipartifact
+module github.com/mr-pmillz/gozipartifact
 
 go 1.17
 
